@@ -4,7 +4,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
-
 type SoilLayer = {
   id: string;
   name: string;
@@ -24,7 +23,6 @@ type LoadRow = {
   H_kN: string;
   M_kNm: string;
 };
-
 
 function uid() {
   return Math.random().toString(36).slice(2, 10);
@@ -108,93 +106,98 @@ export default function Page() {
     pile: true,
   });
 
-  // ✅ Defaults wie im Screenshot
-const [layers, setLayers] = useState<SoilLayer[]>(() => [
-  {
-    id: uid(),
-    name: "Schicht S1: Sand",
-    thickness_m: "2,60",          // Gutachten: 0,5–2,6 m -> für Test 2,60
-    slope_deg: "30",              // falls im Gutachten nicht anders: 30°
-    shaftFriction_kN_m2: "5",     // 0,005 MN/m² = 5 kN/m²
-    phi_deg: "30,0",              // φ cal.
-    cohesion_kN_m2: "0",          // c'
-  },
-  {
-    id: uid(),
-    name: "Schicht S2: Geschiebelehm",
-    thickness_m: "3,40",          // Gutachten: maximal sondierte Mächtigkeit 3,4 m
-    slope_deg: "30",
-    shaftFriction_kN_m2: "22",    // 0,022 MN/m² = 22 kN/m²
-    phi_deg: "22,5",
-    cohesion_kN_m2: "6",
-  },
-]);
+  // ✅ Defaults
+  const [layers, setLayers] = useState<SoilLayer[]>(() => [
+    {
+      id: uid(),
+      name: "Schicht S1: Sand",
+      thickness_m: "2,60",
+      slope_deg: "30",
+      shaftFriction_kN_m2: "5",
+      phi_deg: "30,0",
+      cohesion_kN_m2: "0",
+    },
+    {
+      id: uid(),
+      name: "Schicht S2: Geschiebelehm",
+      thickness_m: "3,40",
+      slope_deg: "30",
+      shaftFriction_kN_m2: "22",
+      phi_deg: "22,5",
+      cohesion_kN_m2: "6",
+    },
+  ]);
 
-
-const [loads, setLoads] = useState<LoadRow[]>(() => [
-  {
-    id: uid(),
-    bereich: "gruen",
-    stuetze: "kurz",
-    compression_kN: "20,1",
-    tension_kN: "3,06",
-    H_kN: "5,13",
-    M_kNm: "3,86",
-  },
-  {
-    id: uid(),
-    bereich: "gelb",
-    stuetze: "lang",
-    compression_kN: "13,76",
-    tension_kN: "18,31",
-    H_kN: "0,78",
-    M_kNm: "1,38",
-  },
-]);
-
-
+  const [loads, setLoads] = useState<LoadRow[]>(() => [
+    {
+      id: uid(),
+      bereich: "gruen",
+      stuetze: "kurz",
+      compression_kN: "20,1",
+      tension_kN: "3,06",
+      H_kN: "5,13",
+      M_kNm: "3,86",
+    },
+    {
+      id: uid(),
+      bereich: "gelb",
+      stuetze: "lang",
+      compression_kN: "13,76",
+      tension_kN: "18,31",
+      H_kN: "0,78",
+      M_kNm: "1,38",
+    },
+  ]);
 
   const [gammaZ, setGammaZ] = useState("1,3");
   const [gammaD, setGammaD] = useState("1,2");
-  const [alphaC, setAlphaC] = useState("0,5"); // Abminderungsfaktor Kohäsion
-
+  const [alphaC, setAlphaC] = useState("0,5");
 
   const [b_m, setB_m] = useState("0,12");
   const [U_m, setU_m] = useState("0,5978");
 
+  // ✅ verhindert "Defaults überschreiben Storage" beim ersten Render
+  const [hydrated, setHydrated] = useState(false);
+
   // ✅ Beim Laden: letzte Eingaben aus sessionStorage wiederherstellen
-useEffect(() => {
-  try {
-    const raw = sessionStorage.getItem("unien_rammtiefe_inputs_v1");
-    if (!raw) return;
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem("unien_rammtiefe_inputs_v1");
+      if (!raw) {
+        setHydrated(true);
+        return;
+      }
 
-    const parsed = JSON.parse(raw);
+      const parsed = JSON.parse(raw);
 
-    if (parsed.layers) setLayers(parsed.layers);
-    if (parsed.loads) setLoads(parsed.loads);
+      if (parsed.layers) setLayers(parsed.layers);
+      if (parsed.loads) setLoads(parsed.loads);
 
-    if (parsed.factors?.gammaD) setGammaD(parsed.factors.gammaD);
-    if (parsed.factors?.gammaZ) setGammaZ(parsed.factors.gammaZ);
-    if (parsed.factors?.alphaC) setAlphaC(parsed.factors.alphaC);
+      if (parsed.factors?.gammaD) setGammaD(parsed.factors.gammaD);
+      if (parsed.factors?.gammaZ) setGammaZ(parsed.factors.gammaZ);
+      if (parsed.factors?.alphaC) setAlphaC(parsed.factors.alphaC);
 
-    if (parsed.pile?.b_m) setB_m(parsed.pile.b_m);
-    if (parsed.pile?.U_m) setU_m(parsed.pile.U_m);
-  } catch {
-    // ignore
-  }
-}, []);
+      if (parsed.pile?.b_m) setB_m(parsed.pile.b_m);
+      if (parsed.pile?.U_m) setU_m(parsed.pile.U_m);
+    } catch {
+      // ignore
+    } finally {
+      setHydrated(true);
+    }
+  }, []);
 
-// ✅ Bei jeder Änderung: automatisch speichern
-useEffect(() => {
-  const payload = {
-    layers,
-    loads,
-    factors: { gammaZ, gammaD, alphaC },
-    pile: { b_m, U_m },
-  };
-  sessionStorage.setItem("unien_rammtiefe_inputs_v1", JSON.stringify(payload));
-}, [layers, loads, gammaZ, gammaD, alphaC, b_m, U_m]);
+  // ✅ Bei jeder Änderung: automatisch speichern (aber erst nach Hydration)
+  useEffect(() => {
+    if (!hydrated) return;
 
+    const payload = {
+      layers,
+      loads,
+      factors: { gammaZ, gammaD, alphaC },
+      pile: { b_m, U_m },
+    };
+    sessionStorage.setItem("unien_rammtiefe_inputs_v1", JSON.stringify(payload));
+  }, [hydrated, layers, loads, gammaZ, gammaD, alphaC, b_m, U_m]);
 
   const totalThickness = useMemo(() => {
     let sum = 0;
@@ -232,18 +235,17 @@ useEffect(() => {
     setLoads((prev) => prev.map((r) => (r.id === id ? { ...r, ...patch } : r)));
   }
   function addLoad() {
-    const nextIndex = loads.length + 1;
     setLoads((prev) => [
       ...prev,
       {
-  id: uid(),
-  bereich: "gruen",
-  stuetze: "kurz",
-  compression_kN: "",
-  tension_kN: "",
-  H_kN: "",
-  M_kNm: "",
-},
+        id: uid(),
+        bereich: "gruen",
+        stuetze: "kurz",
+        compression_kN: "",
+        tension_kN: "",
+        H_kN: "",
+        M_kNm: "",
+      },
     ]);
   }
   function removeLoad(id: string) {
@@ -251,11 +253,11 @@ useEffect(() => {
   }
 
   function goBerechnen() {
-    // Inputs für berechnen.tsx ablegen
+    // ✅ Hier MUSS alphaC mit rein, sonst "geht verloren"
     const payload = {
       layers,
       loads,
-      factors: { gammaZ, gammaD },
+      factors: { gammaZ, gammaD, alphaC },
       pile: { b_m, U_m },
     };
     sessionStorage.setItem("unien_rammtiefe_inputs_v1", JSON.stringify(payload));
@@ -269,7 +271,9 @@ useEffect(() => {
         <div className="mx-auto max-w-7xl px-6 py-6">
           <div className="flex items-end justify-between">
             <div>
-              <h1 className="text-lg font-semibold tracking-wide">UNIEN Rammtiefenbemessung Testversion</h1>
+              <h1 className="text-lg font-semibold tracking-wide">
+                UNIEN Rammtiefenbemessung Testversion
+              </h1>
             </div>
             <div className="text-right text-xs text-slate-600">
               <div>Methodik: Vogt (1988)</div>
@@ -364,7 +368,7 @@ useEffect(() => {
           </div>
 
           <div className="mt-3 text-xs text-slate-500">
-            Hinweis: Eingaben sind aktuell freie Werte (UI-Prototyp). Validierung und Normlogik folgen im nächsten Schritt.
+            Hinweis: Eingaben werden automatisch gespeichert (im Browser) und beim nächsten Öffnen wiederhergestellt.
           </div>
         </Section>
 
@@ -381,7 +385,7 @@ useEffect(() => {
               <thead className="bg-slate-100">
                 <tr>
                   <th className="w-40 border-b border-slate-300 px-3 py-2 text-left">Bereich</th>
-<th className="w-40 border-b border-slate-300 px-3 py-2 text-left">Stütze</th>
+                  <th className="w-40 border-b border-slate-300 px-3 py-2 text-left">Stütze</th>
                   <th className="w-28 border-b border-slate-300 px-3 py-2 text-left">Druck [kN]</th>
                   <th className="w-28 border-b border-slate-300 px-3 py-2 text-left">Zug [kN]</th>
                   <th className="w-28 border-b border-slate-300 px-3 py-2 text-left">H [kN]</th>
@@ -394,27 +398,32 @@ useEffect(() => {
                 {loads.map((r) => (
                   <tr key={r.id} className="bg-white">
                     <td className="border-t border-slate-200 px-3 py-2">
-  <select
-    value={r.bereich}
-    onChange={(e) => updateLoad(r.id, { bereich: e.target.value as LoadRow["bereich"] })}
-    className="w-full rounded-md border border-slate-300 px-2 py-1 outline-none focus:border-slate-500"
-  >
-    <option value="gruen">Grün</option>
-    <option value="gelb">Gelb</option>
-    <option value="rot">Rot</option>
-  </select>
-</td>
+                      <select
+                        value={r.bereich}
+                        onChange={(e) =>
+                          updateLoad(r.id, { bereich: e.target.value as LoadRow["bereich"] })
+                        }
+                        className="w-full rounded-md border border-slate-300 px-2 py-1 outline-none focus:border-slate-500"
+                      >
+                        <option value="gruen">Grün</option>
+                        <option value="gelb">Gelb</option>
+                        <option value="rot">Rot</option>
+                      </select>
+                    </td>
 
-<td className="border-t border-slate-200 px-3 py-2">
-  <select
-    value={r.stuetze}
-    onChange={(e) => updateLoad(r.id, { stuetze: e.target.value as LoadRow["stuetze"] })}
-    className="w-full rounded-md border border-slate-300 px-2 py-1 outline-none focus:border-slate-500"
-  >
-    <option value="kurz">kurz</option>
-    <option value="lang">lang</option>
-  </select>
-</td>
+                    <td className="border-t border-slate-200 px-3 py-2">
+                      <select
+                        value={r.stuetze}
+                        onChange={(e) =>
+                          updateLoad(r.id, { stuetze: e.target.value as LoadRow["stuetze"] })
+                        }
+                        className="w-full rounded-md border border-slate-300 px-2 py-1 outline-none focus:border-slate-500"
+                      >
+                        <option value="kurz">kurz</option>
+                        <option value="lang">lang</option>
+                      </select>
+                    </td>
+
                     <td className="border-t border-slate-200 px-3 py-2">
                       <NumInput value={r.compression_kN} onChange={(v) => updateLoad(r.id, { compression_kN: v })} />
                     </td>
@@ -427,6 +436,7 @@ useEffect(() => {
                     <td className="border-t border-slate-200 px-3 py-2">
                       <NumInput value={r.M_kNm} onChange={(v) => updateLoad(r.id, { M_kNm: v })} />
                     </td>
+
                     <td className="border-t border-slate-200 px-3 py-2">
                       <button
                         type="button"
@@ -440,7 +450,7 @@ useEffect(() => {
                 ))}
 
                 <tr>
-                  <td colSpan={6} className="border-t border-slate-300 bg-slate-50 px-3 py-3">
+                  <td colSpan={7} className="border-t border-slate-300 bg-slate-50 px-3 py-3">
                     <button
                       type="button"
                       onClick={addLoad}
@@ -489,20 +499,21 @@ useEffect(() => {
               />
               <div className="mt-1 text-xs text-slate-500">z. B. 1,20</div>
             </div>
+
             <div className="border border-slate-300 p-4">
-  <label className="block text-sm font-medium mb-1">
-    Abminderungsfaktor Kohäsion α<sub>c</sub>
-  </label>
-  <input
-    value={alphaC}
-    onChange={(e) => setAlphaC(e.target.value)}
-    inputMode="decimal"
-    className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500"
-  />
-  <div className="mt-1 text-xs text-slate-500">
-    z. B. 0,50 (Gutachten). Hinweis: Vogt (1988) setzt c intern = 0.
-  </div>
-</div>
+              <label className="block text-sm font-medium mb-1">
+                Abminderungsfaktor Kohäsion α<sub>c</sub>
+              </label>
+              <input
+                value={alphaC}
+                onChange={(e) => setAlphaC(e.target.value)}
+                inputMode="decimal"
+                className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500"
+              />
+              <div className="mt-1 text-xs text-slate-500">
+                z. B. 0,50 (Gutachten).
+              </div>
+            </div>
           </div>
         </Section>
 
