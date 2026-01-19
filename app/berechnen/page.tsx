@@ -90,8 +90,7 @@ export default function BerechnenPage() {
   const router = useRouter();
 
   // ✅ Backend URL (ändern, wenn nötig)
-const API_BASE =
-  process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://127.0.0.1:8080";
+
 
   const [data, setData] = useState<Payload | null>(null);
   const [tableRows, setTableRows] = useState<TableRow[]>([]);
@@ -215,7 +214,7 @@ const API_BASE =
         })
       );
     } catch {
-      setError("Backend nicht erreichbar (Vertikal). Prüfe API_BASE/Port/CORS.");
+      setError("Berechnung fehlgeschlagen. Bitte Seite neu laden oder später erneut versuchen.");
     } finally {
       setLoadingV(false);
     }
