@@ -42,6 +42,8 @@ app.post("/calc/vogt-horizontal", (req, res) => {
 });
 
 const PORT = Number(process.env.PORT ?? 8080);
-app.listen(PORT, () => {
-  console.log(`Backend listening on http://127.0.0.1:${PORT}`);
+
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`Backend listening on http://0.0.0.0:${PORT}`);
 });
+
