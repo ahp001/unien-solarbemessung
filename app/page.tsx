@@ -1,7 +1,7 @@
 // app/page.tsx
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
 
@@ -161,6 +161,40 @@ const [loads, setLoads] = useState<LoadRow[]>(() => [
 
   const [b_m, setB_m] = useState("0,12");
   const [U_m, setU_m] = useState("0,5978");
+
+  // ✅ Beim Laden: letzte Eingaben aus sessionStorage wiederherstellen
+useEffect(() => {
+  try {
+    const raw = sessionStorage.getItem("unien_rammtiefe_inputs_v1");
+    if (!raw) return;
+
+    const parsed = JSON.parse(raw);
+
+    if (parsed.layers) setLayers(parsed.layers);
+    if (parsed.loads) setLoads(parsed.loads);
+
+    if (parsed.factors?.gammaD) setGammaD(parsed.factors.gammaD);
+    if (parsed.factors?.gammaZ) setGammaZ(parsed.factors.gammaZ);
+    if (parsed.factors?.alphaC) setAlphaC(parsed.factors.alphaC);
+
+    if (parsed.pile?.b_m) setB_m(parsed.pile.b_m);
+    if (parsed.pile?.U_m) setU_m(parsed.pile.U_m);
+  } catch {
+    // ignore
+  }
+}, []);
+
+// ✅ Bei jeder Änderung: automatisch speichern
+useEffect(() => {
+  const payload = {
+    layers,
+    loads,
+    factors: { gammaZ, gammaD, alphaC },
+    pile: { b_m, U_m },
+  };
+  sessionStorage.setItem("unien_rammtiefe_inputs_v1", JSON.stringify(payload));
+}, [layers, loads, gammaZ, gammaD, alphaC, b_m, U_m]);
+
 
   const totalThickness = useMemo(() => {
     let sum = 0;
