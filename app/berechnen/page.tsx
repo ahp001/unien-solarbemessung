@@ -32,12 +32,14 @@ type Payload = {
 };
 
 type TableRow = {
-  support: string; // Stütze (kurz/lang)
-  bereich: string; // gruen/gelb/rot
-  layer: string; // Bodenschicht-Name
-  L_h_m: string; // Platzhalter (später Vogt)
-  L_v_m: string; // wird per Backend gefüllt
+  positionKey: string;   // exakt wie im Request/Response
+  supportLabel: string;  // nur "kurz"/"lang" fürs UI
+  bereich: string;
+  layer: string;
+  L_h_m: string;
+  L_v_m: string;
 };
+
 
 type VerticalRow = {
   position: string; // kommt vom Backend zurück (wir senden stuetze als position)
@@ -123,23 +125,30 @@ export default function BerechnenPage() {
   }, []);
 
   // 2) Tabelle als Platzhalter erzeugen (Stütze/Bereich × Bodenschicht)
-  useEffect(() => {
-    if (!data) return;
+useEffect(() => {
+  if (!data) return;
 
-    const rows: TableRow[] = [];
-    for (const ld of data.loads) {
-      for (const ly of data.layers) {
-        rows.push({
-          support: `${ld.stuetze}__${ld.id}`, // ✅ statt position
-          bereich: ld.bereich,
-          layer: ly.name,
-          L_h_m: "—",
-          L_v_m: "—",
-        });
-      }
+  const rows: TableRow[] = [];
+
+  for (const ld of data.loads) {
+    const positionKey = `${ld.stuetze}_${ld.id}`; // MUSS identisch zum Request sein
+    const supportLabel = ld.stuetze;
+
+    for (const ly of data.layers) {
+      rows.push({
+        positionKey,
+        supportLabel,
+        bereich: ld.bereich,
+        layer: ly.name,
+        L_h_m: "—",
+        L_v_m: "—",
+      });
     }
-    setTableRows(rows);
-  }, [data]);
+  }
+
+  setTableRows(rows);
+}, [data]);
+
 
   // 3) Auto-Run Vertikal, sobald Tabelle da ist
   useEffect(() => {
@@ -183,10 +192,11 @@ export default function BerechnenPage() {
           })),
           // ✅ Backend erwartet "position" -> wir senden stuetze (kurz/lang)
           loads: data.loads.map((r) => ({
-            position: `${r.stuetze}__${r.id}`,
-            compression_kN: r.compression_kN,
-            tension_kN: r.tension_kN,
-          })),
+  position: `${r.stuetze}_${r.id}`,
+  compression_kN: r.compression_kN,
+  tension_kN: r.tension_kN,
+})),
+
           factors: data.factors,
           pile: { U_m: data.pile.U_m },
         }),
@@ -201,18 +211,18 @@ export default function BerechnenPage() {
 
       // Map: "stuetze||layer" -> L_v_m
       const map = new Map<string, number>();
-      for (const r of (out as VerticalOk).rows) {
-        map.set(`${r.position}||${r.layer}`, Number(r.L_v_m));
-      }
+for (const r of (out as VerticalOk).rows) {
+  map.set(`${r.position}||${r.layer}`, Number(r.L_v_m));
+}
 
-      // Tabelle updaten
-      setTableRows((prev) =>
-        prev.map((tr) => {
-          const key = `${tr.support}||${tr.layer}`;
-          if (!map.has(key)) return tr;
-          return { ...tr, L_v_m: fmtDE(map.get(key)!, 2) };
-        })
-      );
+setTableRows((prev) =>
+  prev.map((tr) => {
+    const key = `${tr.positionKey}||${tr.layer}`;
+    if (!map.has(key)) return tr;
+    return { ...tr, L_v_m: fmtDE(map.get(key)!, 2) };
+  })
+);
+
     } catch {
       setError("Berechnung fehlgeschlagen. Bitte Seite neu laden oder später erneut versuchen.");
     } finally {
@@ -376,12 +386,12 @@ export default function BerechnenPage() {
               <tbody>
                 {tableRows.map((r, idx) => (
                   <tr key={idx} className="bg-white">
-                    <Cell>{String(r.support).split("__")[0]}</Cell>
-                    <Cell>{labelBereich(r.bereich)}</Cell>
-                    <Cell>{r.layer}</Cell>
-                    <Cell right>{r.L_h_m}</Cell>
-                    <Cell right>{r.L_v_m}</Cell>
-                  </tr>
+  <Cell>{r.supportLabel}</Cell>
+  <Cell>{labelBereich(r.bereich)}</Cell>
+  <Cell>{r.layer}</Cell>
+  <Cell right>{r.L_h_m}</Cell>
+  <Cell right>{r.L_v_m}</Cell>
+</tr>
                 ))}
               </tbody>
             </table>
