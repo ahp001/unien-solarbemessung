@@ -90,7 +90,7 @@ export default function BerechnenPage() {
   const router = useRouter();
 
   // ✅ Backend URL (ändern, wenn nötig)
-  const API_BASE =
+const API_BASE =
   process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://127.0.0.1:8080";
 
   const [data, setData] = useState<Payload | null>(null);
@@ -173,7 +173,7 @@ export default function BerechnenPage() {
     setError(null);
 
     try {
-      const res = await fetch(`${API_BASE}/calc/vertical`, {
+      const res = await fetch(`/api/calc/vertical`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
