@@ -130,7 +130,7 @@ export default function BerechnenPage() {
     for (const ld of data.loads) {
       for (const ly of data.layers) {
         rows.push({
-          support: ld.stuetze, // ✅ statt position
+          support: `${ld.stuetze}__${ld.id}`, // ✅ statt position
           bereich: ld.bereich,
           layer: ly.name,
           L_h_m: "—",
@@ -183,7 +183,7 @@ export default function BerechnenPage() {
           })),
           // ✅ Backend erwartet "position" -> wir senden stuetze (kurz/lang)
           loads: data.loads.map((r) => ({
-            position: r.stuetze,
+            position: `${r.stuetze}__${r.id}`,
             compression_kN: r.compression_kN,
             tension_kN: r.tension_kN,
           })),
@@ -376,7 +376,7 @@ export default function BerechnenPage() {
               <tbody>
                 {tableRows.map((r, idx) => (
                   <tr key={idx} className="bg-white">
-                    <Cell>{r.support}</Cell>
+                    <Cell>{String(r.support).split("__")[0]}</Cell>
                     <Cell>{labelBereich(r.bereich)}</Cell>
                     <Cell>{r.layer}</Cell>
                     <Cell right>{r.L_h_m}</Cell>
