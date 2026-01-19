@@ -399,7 +399,7 @@ setTableRows((prev) =>
         ) : !error ? (
           <div className="text-sm text-slate-600">Keine Tabelle vorhanden.</div>
         ) : null}
-
+        
         {/* Bottom bar */}
         <div className="border border-slate-300 bg-slate-50 px-5 py-5">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
