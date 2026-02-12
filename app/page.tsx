@@ -6,11 +6,12 @@ import { useRouter } from "next/navigation";
 
 type Project = {
   id: string;
-  projectNo: string; // ✅ frei (Text: Buchstaben/Zahlen/Sonderzeichen)
+  projectNo: string; // ✅ wieder string
   bauherr: string;
   adresse: string;
   createdAtISO: string;
 };
+
 
 const STORAGE_KEY = "unien_projects_v1";
 const ACTIVE_KEY = "unien_active_project_id_v1";
@@ -40,7 +41,7 @@ export default function HomeProjectsPage() {
   const router = useRouter();
 
   const [projects, setProjects] = useState<Project[]>([]);
-  const [projectNo, setProjectNo] = useState(""); // ✅ user input (frei)
+  const [projectNo, setProjectNo] = useState(""); // ✅ user input
   const [bauherr, setBauherr] = useState("");
   const [adresse, setAdresse] = useState("");
 
@@ -56,14 +57,15 @@ export default function HomeProjectsPage() {
   const [editBauherr, setEditBauherr] = useState("");
   const [editAdresse, setEditAdresse] = useState("");
 
-  // ✅ Validierung fürs Anlegen (nur nicht-leer)
-  const canCreate = useMemo(() => {
-    return (
-      projectNo.trim().length > 0 &&
-      bauherr.trim().length > 0 &&
-      adresse.trim().length > 0
-    );
-  }, [projectNo, bauherr, adresse]);
+  // ✅ Validierung fürs Anlegen
+ const canCreate = useMemo(() => {
+  return (
+    projectNo.trim().length > 0 &&
+    bauherr.trim().length > 0 &&
+    adresse.trim().length > 0
+  );
+}, [projectNo, bauherr, adresse]);
+
 
   // 🔹 Projekte laden
   useEffect(() => {
@@ -91,18 +93,19 @@ export default function HomeProjectsPage() {
     const bh = bauherr.trim();
     const ad = adresse.trim();
 
-    // optional: doppelte Projekt-Nr. verhindern (case-insensitive)
+    // optional: doppelte Projekt-Nr. verhindern
     const exists = projects.some(
-      (p) => (p.projectNo ?? "").trim().toLowerCase() === pn.toLowerCase()
-    );
+  (p) => (p.projectNo ?? "").trim().toLowerCase() === pn.toLowerCase()
+);
+
     if (exists) {
-      alert(`Projekt-Nr. "${pn}" existiert bereits. Bitte eine andere wählen.`);
+      alert(`Projekt Nr. ${pn} existiert bereits. Bitte eine andere Nr. wählen.`);
       return;
     }
 
     const p: Project = {
       id: uid(),
-      projectNo: pn, // ✅ frei
+      projectNo: pn, // ✅ user number
       bauherr: bh,
       adresse: ad,
       createdAtISO: new Date().toISOString(),
@@ -144,40 +147,39 @@ export default function HomeProjectsPage() {
 
   function saveEdit(id: string) {
     const pn = editProjectNo.trim();
-    const bh = editBauherr.trim();
-    const ad = editAdresse.trim();
+const bh = editBauherr.trim();
+const ad = editAdresse.trim();
 
-    if (!pn || !bh || !ad) {
-      alert("Bitte alle Felder korrekt ausfüllen.");
-      return;
-    }
+if (!pn || !bh || !ad) {
+  alert("Bitte alle Felder korrekt ausfüllen.");
+  return;
+}
 
-    // optional: doppelte Projekt-Nr. verhindern (case-insensitive)
-    const exists = projects.some(
-      (p) =>
-        p.id !== id &&
-        (p.projectNo ?? "").trim().toLowerCase() === pn.toLowerCase()
-    );
-    if (exists) {
-      alert(`Projekt-Nr. "${pn}" existiert bereits. Bitte eine andere wählen.`);
-      return;
-    }
+const exists = projects.some(
+  (p) =>
+    p.id !== id &&
+    (p.projectNo ?? "").trim().toLowerCase() === pn.toLowerCase()
+);
 
-    setProjects((prev) =>
-      prev.map((p) =>
-        p.id === id ? { ...p, projectNo: pn, bauherr: bh, adresse: ad } : p
-      )
-    );
+if (exists) {
+  alert(`Projekt Nr. "${pn}" existiert bereits. Bitte eine andere Nr. wählen.`);
+  return;
+}
 
-    cancelEdit();
+setProjects((prev) =>
+  prev.map((p) =>
+    p.id === id ? { ...p, projectNo: pn, bauherr: bh, adresse: ad } : p
+  )
+);
+
+cancelEdit();
   }
-
   const filteredProjects = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return projects;
 
     return projects.filter((p) => {
-      const hay = `${p.projectNo} ${p.bauherr} ${p.adresse}`.toLowerCase(); // ✅ ohne "projekt"
+      const hay = `projekt ${p.projectNo} ${p.bauherr} ${p.adresse}`.toLowerCase();
       return hay.includes(q);
     });
   }, [projects, query]);
@@ -208,17 +210,18 @@ export default function HomeProjectsPage() {
           </div>
 
           <div className="p-4 grid gap-4 md:grid-cols-3">
-            {/* ✅ Projekt Nr Eingabe (frei) */}
+            {/* ✅ Projekt Nr Eingabe */}
             <div>
               <label className="block text-xs text-slate-600">Projekt Nr.</label>
               <input
                 value={projectNo}
                 onChange={(e) => setProjectNo(e.target.value)}
                 className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-                placeholder='z.B. "A-2026-07"'
+                inputMode="numeric"
+                placeholder="z.B. 7"
               />
               <div className="mt-1 text-xs text-slate-500">
-                Frei wählbar (Text).
+                Wird manuell vergeben.
               </div>
             </div>
 
@@ -328,10 +331,11 @@ export default function HomeProjectsPage() {
                             value={editProjectNo}
                             onChange={(e) => setEditProjectNo(e.target.value)}
                             className="w-full rounded-lg border border-slate-300 px-2 py-1.5 text-sm"
-                            placeholder='z.B. "A-2026-07"'
+                            inputMode="numeric"
+                            placeholder="z.B. 7"
                           />
                         ) : (
-                          p.projectNo // ✅ ohne "Projekt"
+                        p.projectNo
                         )}
                       </td>
 
@@ -382,22 +386,30 @@ export default function HomeProjectsPage() {
                           </div>
                         ) : (
                           <div className="flex justify-end gap-2">
-                            <button
-                              type="button"
-                              onClick={() => startEdit(p)}
-                              className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium hover:bg-slate-100"
-                            >
-                              Bearbeiten
-                            </button>
+  <button
+    type="button"
+    onClick={() => openProject(p)}
+    className="rounded-lg bg-slate-900 text-white px-3 py-1.5 text-xs font-medium hover:bg-slate-800"
+  >
+    Öffnen
+  </button>
 
-                            <button
-                              type="button"
-                              onClick={() => handleDelete(p.id)}
-                              className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium hover:bg-slate-100"
-                            >
-                              Löschen
-                            </button>
-                          </div>
+  <button
+    type="button"
+    onClick={() => startEdit(p)}
+    className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium hover:bg-slate-100"
+  >
+    Bearbeiten
+  </button>
+
+  <button
+    type="button"
+    onClick={() => handleDelete(p.id)}
+    className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium hover:bg-slate-100"
+  >
+    Löschen
+  </button>
+</div>
                         )}
                       </td>
                     </tr>
