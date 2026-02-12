@@ -1,8 +1,6 @@
 import express from "express";
 import cors from "cors";
 import { calcVerticalSingleLayerTable as calcVertical } from "./calc/vertical";
-import { calcHorizontalVogt } from "./calc/vogt"; // ✅ NEU
-
 
 const app = express();
 app.use(cors({ origin: true }));
@@ -20,21 +18,6 @@ app.post("/calc/vertical", (req, res) => {
   } catch (e: any) {
     return res.status(500).json({
       ok: false,
-      message: e?.message ?? "Internal error",
-      protokoll: [],
-    });
-  }
-});
-
-// ✅ Vogt 1988 Horizontal (H/M) – Endpoint den dein UI sucht
-app.post("/calc/vogt-horizontal", (req, res) => {
-  try {
-    const out = calcHorizontalVogt(req.body);
-    return res.status(200).json(out);
-  } catch (e: any) {
-    return res.status(500).json({
-      ok: false,
-      method: "Vogt (1988) horizontal",
       message: e?.message ?? "Internal error",
       protokoll: [],
     });
